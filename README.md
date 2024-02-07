@@ -1,10 +1,14 @@
 # db_comparisons
-Compare sqlite and DuckDB for aggregation queries
+Compare sqlite and DuckDB for aggregation queries.
+
+Related:
+- https://github.com/f-hafner/mag_sample/issues/39
+- https://github.com/NLeSC/guide/issues/316
 
 ### Steps 
 1. Copy from sqlite to duckdb. Follow `create_duckdb_from_mag.md`. Need access to current database.
 2. Create sqlite copy from the duckdb file created in step 1 (for exact comparison). Create indexes. TODO 
-3. Compare queries: directly in Duck, directly in sqlite, and querying sqlite with duck. TODO
+3. Compare queries: directly in Duck, directly in sqlite, and querying sqlite with duck. Compare timing; make sure results are the same. TODO
 
 
 ### Queries to compare 
@@ -71,3 +75,44 @@ FROM (
 )   
 WHERE PaperCount = MaxPaperCount ;  
 ```
+
+
+
+
+- if sqlite does not define types, duckdb cannot convert them
+	-
+	  ```sql
+	   create temp table mytest  as select * from sqlite_scan("/mnt/ssd/AcademicGraph/AcademicGraph.sqlite", "author_sample");
+	  ```
+	- raises `Error: Conversion Error: Unimplemented type for cast (BLOB -> INTEGER)`
+	- schema of `author_sample` in sqlite:
+	-
+	  ```sql
+	  CREATE TABLE author_sample(
+	    AuthorId INT,
+	    YearLastPub,
+	    YearFirstPub,
+	    PaperCount,
+	    FirstName
+	  );
+	  CREATE UNIQUE INDEX idx_as_AuthorId ON author_sample (AuthorId ASC) ;
+	  CREATE INDEX idx_as_FirstName ON author_sample (FirstName ASC);
+	  ```
+		- this means when building the sqlite table, types need to be enforced with
+		-
+		  ```sql
+		  create table flavio_test (AuthorId INT, YearLastPub INT, YearFirstPub INT, PaperCount INT, FirstName VARCHAR);
+		  ```
+
+
+
+## Thoughts and lessons learned 
+
+- "static input data" != static database. 
+    - what seems to matter is whether input data is static; I did not understand that correctly until today
+- sqlite still has advantages that may be overlooked by these comparisons
+    - for instance, the unique constraint on indexes is quick check that data integrity is not violated; a similar mechanism should always be used even when using duckdb
+- I think Duck parallelizes across CPUs. So the gains may differ by by laptop vs cluster/server
+    - are the gains proportional to the CPUs available?
+    - compare both on a cluster and on a laptop
+
