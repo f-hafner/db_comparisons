@@ -77,37 +77,10 @@ WHERE PaperCount = MaxPaperCount ;
 ```
 
 
-
-
-- if sqlite does not define types, duckdb cannot convert them
-	-
-	  ```sql
-	   create temp table mytest  as select * from sqlite_scan("/mnt/ssd/AcademicGraph/AcademicGraph.sqlite", "author_sample");
-	  ```
-	- raises `Error: Conversion Error: Unimplemented type for cast (BLOB -> INTEGER)`
-	- schema of `author_sample` in sqlite:
-	-
-	  ```sql
-	  CREATE TABLE author_sample(
-	    AuthorId INT,
-	    YearLastPub,
-	    YearFirstPub,
-	    PaperCount,
-	    FirstName
-	  );
-	  CREATE UNIQUE INDEX idx_as_AuthorId ON author_sample (AuthorId ASC) ;
-	  CREATE INDEX idx_as_FirstName ON author_sample (FirstName ASC);
-	  ```
-		- this means when building the sqlite table, types need to be enforced with
-		-
-		  ```sql
-		  create table flavio_test (AuthorId INT, YearLastPub INT, YearFirstPub INT, PaperCount INT, FirstName VARCHAR);
-		  ```
-
-
-
 ## Thoughts and lessons learned 
-
+- if sqlite does not define types, duckdb cannot convert them. 
+    - raises `Error: Conversion Error: Unimplemented type for cast (BLOB -> INTEGER)`
+    - So, it's important to have a type for each column on each table when combining sqlite and duckdb.
 - "static input data" != static database. 
     - what seems to matter is whether input data is static; I did not understand that correctly until today
 - sqlite still has advantages that may be overlooked by these comparisons
